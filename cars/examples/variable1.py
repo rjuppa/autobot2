@@ -1,19 +1,14 @@
+import codecs
 import json
 import os
 from os import listdir
 from os.path import isfile, join, isdir
+
+
 import numpy as np
 import chainer
-import codecs
+
 from shutil import copyfile
-from chainer.backends import cuda
-from chainer import Function, gradient_check, report, training, utils, Variable
-from chainer import datasets, iterators, optimizers, serializers
-from chainer import Link, Chain, ChainList
-import chainer.functions as F
-import chainer.links as L
-from chainer.links.model.vision.resnet import ResNetLayers
-from chainer.training import extensions
 from chainer.links import ResNet50Layers
 
 import cv2
@@ -131,41 +126,30 @@ def get_vehicle(path):
     return make, model, year
 
 
-if __name__ == '__main__':
-
-    parent_path = os.path.abspath('..')
-    path = "{}/datasets".format(parent_path)
-
-    file_name = "ResNet-50-model"
-    caffe_path = "{}/{}.caffemodel".format(path, file_name)
-    npz_path = "{}/{}.npz".format(path, file_name)
-    synset_path = "{}/synset_words.txt".format(path)
-    model = ResNet50Layers(npz_path)
-
-    with open(synset_path) as f:
-        synset = f.read().split("\n")[:-1]
-
-    sub_path = "{}/images/Alfa/Alfa_Romeo_159_2005".format(parent_path)
-    image_files = [join(sub_path, name) for name in sorted(os.listdir(sub_path))]
-
+def process_folder(path, model, synset):
+    image_files = [join(path, name) for name in sorted(os.listdir(path))]
     line = "<html><table border=1>"
     line += "<tr><td width=120></td><td width=100></td><td width=400></td><td width=100></td></tr>"
     template = "\n<tr><td><img src='file://{}' width='100' /></td> <td>{}</td> <td>{}</td> <td>{}</td></tr>"
+    footer = "\n</table></html>"
+    image_path = ""
     for image_path in image_files:
-        print(image_path + "  " + image_path[-4:])
+        print("---> {}".format(image_path))
         if not os.path.isfile(image_path):
             continue
 
         if image_path[-4:] != ".jpg":
             continue
 
+        # retrieve info
         make, version, year = get_vehicle(image_path)
         img = cv2.imread(image_path)
         h, w, ch = img.shape
         img = cv2.resize(img, (224, 224))
+
+        # classify an image
         pred = model.predict([img])
         pred = chainer.cuda.to_cpu(pred.data)
-
         estim = np.argsort(pred)[0][-1::-1]
         idx1 = estim[0]
         idx2 = estim[1]
@@ -175,12 +159,17 @@ if __name__ == '__main__':
         label2 = synset[idx2]
 
         is_car = clasify_car((label1, percent1), (label2, percent2))
+
+        # render html
         labels = "{}<br>{}".format(label1, label2)
         ps = "{}<br>{}".format(percent1, percent2)
         if is_car:
             line += template.format(image_path, ps, labels, get_html(is_car))
+
+        # copy an image
         copy_file(image_path, is_car)
 
+        # create a mata-file json
         data = {"file": image_path.split("/")[-1],
                 "label1": label1, "pc1": percent1,
                 "label2": label1, "pc2": percent1,
@@ -190,11 +179,41 @@ if __name__ == '__main__':
         with codecs.open(image_path.replace(".jpg", ".json"), "w", "utf-8") as outfile:
             json.dump(data, outfile)
 
-    line += "\n</table></html>"
+    # write html overview table
+    line += footer
     dir = os.path.dirname(image_path)
     txt_file = "{}/results.html".format(dir)
     f = codecs.open(txt_file, "w", "utf-8")
     f.write(line)
     f.close()
-    print(txt_file)
+
+
+if __name__ == '__main__':
+
+    # load neural network model
+    parent_path = os.path.abspath('..')
+    path = "{}/datasets".format(parent_path)
+    file_name = "ResNet-50-model"
+    npz_path = "{}/{}.npz".format(path, file_name)
+    synset_path = "{}/synset_words.txt".format(path)
+    model = ResNet50Layers(npz_path)
+
+    with open(synset_path) as f:
+        synset = f.read().split("\n")[:-1]
+
+    image_root = path = "{}/images".format(parent_path)
+    for make_dir in sorted(listdir(image_root)):
+        make_path = join(image_root, make_dir)
+        make_name = make_path.split("/")[-1]
+        if isdir(make_path):
+            for model_dir in sorted(listdir(make_path)):
+                model_path = join(make_path, model_dir)
+                model_name = model_path.split("/")[-1]
+                if isdir(model_path) and model_name.startswith(make_name):
+                    print("======================")
+                    print("MODEL: {}".format(model_name))
+                    process_folder(model_path, model, synset)
+
+    # sub_path = "{}/images/Alfa/Alfa_Romeo_159_2005".format(parent_path)
+
 
