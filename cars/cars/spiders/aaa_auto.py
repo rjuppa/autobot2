@@ -18,8 +18,8 @@ class AAAAutoSpider(CrawlSpider):
 
         """
         name = 'aaaauto'
-        allowed_domains = ['aaaauto.cz', 'aaaauto.eu']
-        start_urls = ['https://www.aaaauto.cz/ojete-vozy', ]
+        allowed_domains = ['aaaauto.pl', 'aaaauto.cz', 'aaaauto.sk', 'aaaauto.hu', 'aaaauto.eu']
+        start_urls = ['https://www.aaaauto.pl/pojazdy-uzywane', ]
 
         rules = (
             # browse for detail
@@ -35,13 +35,20 @@ class AAAAutoSpider(CrawlSpider):
         def get_name(self, res):
             # name (string)
             # Car headline containing the brand and product name
+            # arr = res.xpath('//div[@id="carCardHead"]//h1//text()').extract()
+            # name = " ".join(arr)
+
             name = res.xpath('//div[@class="carAbout"]//h1/text()').extract()
+
             if not name:
-                self.logger.error('Missing name: %s <<------------------', res.url)
                 return ''
+
             if isinstance(name, list):
-                name = name[0]
+                name = " ".join(name)
+
+            name = name.replace(u'  ', u' ')
             name = name.replace(u'\xa0', u' ')
+            name = name.replace(u',', u' ')
             return name
 
         def get_brand(self, res):
@@ -57,11 +64,12 @@ class AAAAutoSpider(CrawlSpider):
 
         def get_price(self, res):
             # unit_price: (float)
-            price = res.xpath('//div[@id="priceTable"]/@data-price').extract_first()
-            price = price.replace(',', '')  # remove thousands separator
-            return float(price)
+            # price = res.xpath('//div[@id="priceTable"]/@data-price').extract_first()
+            # price = price.replace(',', '')  # remove thousands separator
+            return float(0)
 
         def get_year(self, res):
+            # text = res.xpath('//table[@class="transparentTable"]//tr/td/text()').extract_first()
             text = res.xpath('//div[@id="carButtons"]//table//tr/td/text()').extract_first()
             return text if text else ''
 
@@ -90,7 +98,9 @@ class AAAAutoSpider(CrawlSpider):
         def get_image_urls(self, res):
             # image_urls: (string list)
             # String Array of additional image urls
-            li = res.xpath('//div[@class="carAbout"]//div[@id="fotoSlidesIn"]//span/a/@href').extract()
+            # li = res.xpath('//div[@id="photosSlider"]//a[@itemprop="contentUrl"]/@href').extract()
+            li = res.xpath(
+                '//div[@class="carAbout"]//div[@id="fotoSlidesIn"]//span/a/@href').extract()
             return [url for url in li]
 
         def get_primary_image_url(self, res):
@@ -115,7 +125,7 @@ class AAAAutoSpider(CrawlSpider):
             item['url'] = url
             item['name'] = name
             # item['brand'] = self.get_brand(response)
-            item['price'] = self.get_price(response)
+            # item['price'] = self.get_price(response)
             item['year'] = self.get_year(response)
             # item['distance'] = self.get_distance(response)
             item['image_urls'] = image_urls
