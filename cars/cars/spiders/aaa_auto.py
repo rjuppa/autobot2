@@ -19,7 +19,10 @@ class AAAAutoSpider(CrawlSpider):
         """
         name = 'aaaauto'
         allowed_domains = ['aaaauto.pl', 'aaaauto.cz', 'aaaauto.sk', 'aaaauto.hu', 'aaaauto.eu']
-        start_urls = ['https://www.aaaauto.pl/pojazdy-uzywane', ]
+        # start_urls = ['https://www.aaaauto.cz/ojete-vozy/', ]
+        # start_urls = ['https://www.aaaauto.pl/pojazdy-uzywane', ]
+        # start_urls = ['https://www.aaaauto.hu/hasznalt-autok/', ]
+        start_urls = ['https://www.aaaauto.sk/ojazdene-vozidla/', ]
 
         rules = (
             # browse for detail
