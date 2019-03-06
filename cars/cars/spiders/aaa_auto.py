@@ -19,9 +19,9 @@ class AAAAutoSpider(CrawlSpider):
         """
         name = 'aaaauto'
         allowed_domains = ['aaaauto.pl', 'aaaauto.cz', 'aaaauto.sk', 'aaaauto.hu', 'aaaauto.eu']
-        # start_urls = ['https://www.aaaauto.cz/ojete-vozy/', ]
+        start_urls = ['https://www.aaaauto.cz/ojete-vozy/', ]
         # start_urls = ['https://www.aaaauto.pl/pojazdy-uzywane', ]
-        start_urls = ['https://www.aaaauto.hu/hasznalt-autok/', ]
+        # start_urls = ['https://www.aaaauto.hu/hasznalt-autok/', ]
         # start_urls = ['https://www.aaaauto.sk/ojazdene-vozidla/', ]
 
         rules = (
@@ -38,10 +38,10 @@ class AAAAutoSpider(CrawlSpider):
         def get_name(self, res):
             # name (string)
             # Car headline containing the brand and product name
-            # arr = res.xpath('//div[@id="carCardHead"]//h1//text()').extract()
-            # name = " ".join(arr)
+            arr = res.xpath('//div[@id="carCardHead"]//h1//text()').extract()
+            name = " ".join(arr)
 
-            name = res.xpath('//div[@class="carAbout"]//h1/text()').extract()
+            # name = res.xpath('//div[@class="carAbout"]//h1/text()').extract()
 
             if not name:
                 return ''
@@ -72,8 +72,8 @@ class AAAAutoSpider(CrawlSpider):
             return float(0)
 
         def get_year(self, res):
-            # text = res.xpath('//table[@class="transparentTable"]//tr/td/text()').extract_first()
-            text = res.xpath('//div[@id="carButtons"]//table//tr/td/text()').extract_first()
+            text = res.xpath('//table[@class="transparentTable"]//tr/td/text()').extract_first()
+            # text = res.xpath('//div[@id="carButtons"]//table//tr/td/text()').extract_first()
             return text if text else ''
 
         def get_distance(self, res):
@@ -101,9 +101,8 @@ class AAAAutoSpider(CrawlSpider):
         def get_image_urls(self, res):
             # image_urls: (string list)
             # String Array of additional image urls
-            # li = res.xpath('//div[@id="photosSlider"]//a[@itemprop="contentUrl"]/@href').extract()
-            li = res.xpath(
-                '//div[@class="carAbout"]//div[@id="fotoSlidesIn"]//span/a/@href').extract()
+            li = res.xpath('//div[@id="photosSlider"]//a[@itemprop="contentUrl"]/@href').extract()
+            # li = res.xpath('//div[@class="carAbout"]//div[@id="fotoSlidesIn"]//span/a/@href').extract()
             return [url for url in li]
 
         def get_primary_image_url(self, res):
@@ -120,8 +119,18 @@ class AAAAutoSpider(CrawlSpider):
             return res.xpath('//div[@id="breadcrumb"]//li//a/text()').extract()[0:-1]
 
         def parse_item(self, response):
-            name = self.get_name(response)
+
             url = response.url
+            if "skoda" in url.lower():
+                raise DropItem
+
+            if "/vw" in url.lower():
+                raise DropItem
+
+            if "volkswagen" in url.lower():
+                raise DropItem
+
+            name = self.get_name(response)
             image_urls = self.get_image_urls(response)
 
             item = Car()
