@@ -41,7 +41,7 @@ class AAAAutoSpider(CrawlSpider):
             arr = res.xpath('//div[@id="carCardHead"]//h1//text()').extract()
             name = " ".join(arr)
 
-            # name = res.xpath('//div[@class="carAbout"]//h1/text()').extract()
+            #  name = res.xpath('//div[@class="carAbout"]//h1/text()').extract()
 
             if not name:
                 return ''
@@ -102,7 +102,7 @@ class AAAAutoSpider(CrawlSpider):
             # image_urls: (string list)
             # String Array of additional image urls
             li = res.xpath('//div[@id="photosSlider"]//a[@itemprop="contentUrl"]/@href').extract()
-            # li = res.xpath('//div[@class="carAbout"]//div[@id="fotoSlidesIn"]//span/a/@href').extract()
+            #  li = res.xpath('//div[@class="carAbout"]//div[@id="fotoSlidesIn"]//span/a/@href').extract()
             return [url for url in li]
 
         def get_primary_image_url(self, res):
