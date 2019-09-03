@@ -1,2 +1,2 @@
 # autobot2
-VMMR classification
+fetch images of cars from internet for VMMR project
